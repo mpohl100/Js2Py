@@ -92,22 +92,22 @@ class Object:
             sort_keys=True, indent=4)
 
 class Scope(Object):
-    def __init__():
+    def __init__(self):
         self.name = None
         self.args = []
         self.mem = []
         self.children = []
 
-    def add_name(name):
+    def add_name(self,name):
         self.name = name
 
-    def add_put(name):
+    def add_put(self,name):
         self.mem.append(name)
 
-    def add_arg(name):
+    def add_arg(self,name):
         self.args.append(name)
 
-    def add_child(child):
+    def add_child(self,child):
         self.children.append(child)
 
 
@@ -640,9 +640,9 @@ def FunctionExpression(type, id, params, defaults, body, generator, expression):
     # transfer names from Py scope to Js scope
     arg_map = dict(zip(vars, used_vars))
     arg_map.update({'this':'this', 'arguments':'arguments'})
-    print(JsName)
-    for k, v in arg_map.items():
-        print(k,v)
+    #print(JsName)
+    #for k, v in arg_map.items():
+    #    print(k,v)
     if id: # make self available from inside...
         if id['name'] not in arg_map:
             arg_map[id['name']] = PyName
