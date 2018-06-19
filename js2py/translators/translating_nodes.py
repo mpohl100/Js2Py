@@ -601,6 +601,9 @@ def FunctionExpression(type, id, params, defaults, body, generator, expression):
     # transfer names from Py scope to Js scope
     arg_map = dict(zip(vars, used_vars))
     arg_map.update({'this':'this', 'arguments':'arguments'})
+    print(JsName)
+    for k, v in arg_map.items():
+        print(k,v)
     if id: # make self available from inside...
         if id['name'] not in arg_map:
             arg_map[id['name']] = PyName
