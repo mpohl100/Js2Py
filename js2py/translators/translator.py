@@ -67,7 +67,9 @@ def translate_js(js, HEADER=DEFAULT_HEADER, use_compilation_plan=False):
     # Another way of doing that would be with my auto esprima translation but its much slower and causes import problems:
     # parsed = esprima.parse(js).to_dict()
     translating_nodes.clean_stacks()
-    return HEADER + translating_nodes.trans(parsed)  # syntax tree to python code
+    ret = HEADER + translating_nodes.trans(parsed)  # syntax tree to python code
+    print(translating_nodes.scope.toJSON())
+    return ret
 
 class match_unumerator(object):
     """This class ise used """

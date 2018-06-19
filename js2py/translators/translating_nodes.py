@@ -82,12 +82,42 @@ class ContextStack:
             code += func_code
         return code
 
+import json
+
+class Object:
+    def toJSON(self):
+        #print('toJSON')
+        #print(self.__dict__)
+        return json.dumps(self, default=lambda o: o.__dict__, 
+            sort_keys=True, indent=4)
+
+class Scope(Object):
+    def __init__():
+        self.name = None
+        self.args = []
+        self.mem = []
+        self.children = []
+
+    def add_name(name):
+        self.name = name
+
+    def add_put(name):
+        self.mem.append(name)
+
+    def add_arg(name):
+        self.args.append(name)
+
+    def add_child(child):
+        self.children.append(child)
+
 
 
 def clean_stacks():
-    global Context, inline_stack
+    global Context, inline_stack, scope
     Context = ContextStack()
     inline_stack = InlineStack()
+    scope = Scope()
+
 
 
 
@@ -290,6 +320,7 @@ def AssignmentExpression(type, operator, left, right):
                 prop = trans(left['property'])   # its not a string literal! so no repr
         else: # always the same since not computed (obj.prop accessor)
             prop = repr(to_key(left['property']))
+        scope.add_put(prop)
         if operator:
             return far_left + '.put(%s, %s, %s)' % (prop, trans(right), repr(operator))
         else:
@@ -486,6 +517,7 @@ def VariableDeclarator(type, id, init):
     # register the name if not already registered
     Context.register(name)
     if init:
+        scope.add_name(repr(name))
         return 'var.put(%s, %s)\n' % (repr(name), trans(init))
     return ''
 
@@ -528,8 +560,12 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     PyName = 'PyJsHoisted_%s_' % JsName
     PyName = PyName if is_valid_py_name(PyName) else 'PyJsHoistedNonPyName'
     # this is quite complicated
-    global Context
+    global Context, scope
     previous_context = Context
+    scope = Scope()
+    previous_scope = scope
+    for v in params:
+        scope.add_arg(v)
     # change context to the context of this function
     Context = ContextStack()
     # translate body within current context
@@ -559,6 +595,9 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     whole_code = header + indent(arg_conv+code) + footer
     # restore context
     Context = previous_context
+    child = scope
+    scope = previous_scope
+    scope.add_child(child)
     # define in upper context
     Context.define(JsName, whole_code)
     return 'pass\n'
