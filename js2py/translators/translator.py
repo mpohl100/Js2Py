@@ -68,7 +68,7 @@ def translate_js(js, HEADER=DEFAULT_HEADER, use_compilation_plan=False):
     # parsed = esprima.parse(js).to_dict()
     translating_nodes.clean_stacks()
     ret = HEADER + translating_nodes.trans(parsed)  # syntax tree to python code
-    print(translating_nodes.scope.toJSON())
+    print(translating_nodes.root_scope.toJSON())
     return ret
 
 class match_unumerator(object):

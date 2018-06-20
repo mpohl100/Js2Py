@@ -93,13 +93,13 @@ class Object:
 
 class Scope(Object):
     def __init__(self):
-        self.name = None
+        self.vars = []
         self.args = []
         self.mem = []
         self.children = []
 
     def add_name(self,name):
-        self.name = name
+        self.vars.append(name)
 
     def add_put(self,name):
         self.mem.append(name)
@@ -113,10 +113,12 @@ class Scope(Object):
 
 
 def clean_stacks():
-    global Context, inline_stack, scope
+    global Context, inline_stack, root_scope, scope_stack
     Context = ContextStack()
     inline_stack = InlineStack()
-    scope = Scope()
+    root_scope = Scope()
+    root_scope.add_name('global')
+    scope_stack = [root_scope]
 
 
 
@@ -320,7 +322,7 @@ def AssignmentExpression(type, operator, left, right):
                 prop = trans(left['property'])   # its not a string literal! so no repr
         else: # always the same since not computed (obj.prop accessor)
             prop = repr(to_key(left['property']))
-        scope.add_put(prop)
+        scope_stack[-1].add_put(prop)
         if operator:
             return far_left + '.put(%s, %s, %s)' % (prop, trans(right), repr(operator))
         else:
@@ -517,7 +519,7 @@ def VariableDeclarator(type, id, init):
     # register the name if not already registered
     Context.register(name)
     if init:
-        scope.add_name(repr(name))
+        scope_stack[-1].add_name(repr(name))
         return 'var.put(%s, %s)\n' % (repr(name), trans(init))
     return ''
 
@@ -560,10 +562,11 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     PyName = 'PyJsHoisted_%s_' % JsName
     PyName = PyName if is_valid_py_name(PyName) else 'PyJsHoistedNonPyName'
     # this is quite complicated
-    global Context, scope
+    global Context, scope_stack
     previous_context = Context
     scope = Scope()
-    previous_scope = scope
+    scope_stack[-1].add_child(scope)
+    scope_stack.append(scope)
     for v in params:
         scope.add_arg(v)
     # change context to the context of this function
@@ -595,9 +598,7 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     whole_code = header + indent(arg_conv+code) + footer
     # restore context
     Context = previous_context
-    child = scope
-    scope = previous_scope
-    scope.add_child(child)
+    scope_stack = scope_stack[:-1]
     # define in upper context
     Context.define(JsName, whole_code)
     return 'pass\n'
@@ -616,7 +617,12 @@ def FunctionExpression(type, id, params, defaults, body, generator, expression):
     PyName = inline_stack.require(ScriptName)  # this is unique
 
     # again quite complicated
-    global Context
+    global Context, scope_stack
+    scope = Scope()
+    scope_stack[-1].add_child(scope)
+    scope_stack.append(scope)
+    for v in params:
+        scope.add_arg(v['name'])
     previous_context = Context
     # change context to the context of this function
     Context = ContextStack()
@@ -652,6 +658,7 @@ def FunctionExpression(type, id, params, defaults, body, generator, expression):
     whole_code = header + indent(arg_conv+code) + footer
     # restore context
     Context = previous_context
+    scope_stack = scope_stack[:-1]
     # define in upper context
     inline_stack.define(PyName, whole_code)
     return PyName
