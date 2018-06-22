@@ -97,6 +97,7 @@ class Scope(Object):
         self.args = []
         self.mem = []
         self.children = []
+        self.name = ''
 
     def add_name(self,name):
         self.vars.append(name)
@@ -108,6 +109,8 @@ class Scope(Object):
         self.args.append(name)
 
     def add_child(self,child):
+        if len(self.vars) > 0:
+            child.name = self.vars[-1]
         self.children.append(child)
 
 
@@ -117,7 +120,6 @@ def clean_stacks():
     Context = ContextStack()
     inline_stack = InlineStack()
     root_scope = Scope()
-    root_scope.add_name('global')
     scope_stack = [root_scope]
 
 
@@ -520,7 +522,9 @@ def VariableDeclarator(type, id, init):
     Context.register(name)
     if init:
         scope_stack[-1].add_name(repr(name))
-        return 'var.put(%s, %s)\n' % (repr(name), trans(init))
+        ret = trans(init)
+        #print(repr(name) + ' = ' + ret)
+        return 'var.put(%s, %s)\n' % (repr(name), ret)
     return ''
 
 
@@ -568,7 +572,7 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     scope_stack[-1].add_child(scope)
     scope_stack.append(scope)
     for v in params:
-        scope.add_arg(v)
+        scope.add_arg(v['name'])
     # change context to the context of this function
     Context = ContextStack()
     # translate body within current context
