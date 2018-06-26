@@ -119,15 +119,12 @@ class Scope(Object):
 
 
 def clean_stacks():
-    global Context, inline_stack, root_scope, scope_stack
+    global Context, inline_stack, root_scope, scope_stack, this_tracker
     Context = ContextStack()
     inline_stack = InlineStack()
     root_scope = Scope()
     scope_stack = [root_scope]
-
-
-
-
+    this_tracker = False
 
 def to_key(literal_or_identifier):
     ''' returns string representation of this object'''
@@ -219,6 +216,7 @@ def MemberExpression(type, computed, object, property):
 
 
 def ThisExpression(type):
+    this_tracker = True
     return 'var.get(u"this")'
 
 @limited
@@ -316,9 +314,14 @@ def AssignmentExpression(type, operator, left, right):
         if operator:
             return 'var.put(%s, %s, %s)' % (repr(to_key(left)), trans(right), repr(operator))
         else:
+            right_trans = trans(right)
+            if right_trans == ThisExpression(None)
             return 'var.put(%s, %s)' % (repr(to_key(left)), trans(right))
     elif left['type']=='MemberExpression':
+        this_tracker = False
         far_left = trans(left['object'])
+        this_tr = this_tracker
+        this_tracker = False
         if left['computed']:  # obj[prop] type accessor
             # may be literal which is the same in every case so we can save some time on conversion
             if left['property']['type'] == 'Literal':
@@ -327,7 +330,8 @@ def AssignmentExpression(type, operator, left, right):
                 prop = trans(left['property'])   # its not a string literal! so no repr
         else: # always the same since not computed (obj.prop accessor)
             prop = repr(to_key(left['property']))
-        scope_stack[-1].add_put(prop)
+        if this_tr:
+            scope_stack[-1].add_put(prop)
         if operator:
             return far_left + '.put(%s, %s, %s)' % (prop, trans(right), repr(operator))
         else:
