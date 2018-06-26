@@ -108,9 +108,12 @@ class Scope(Object):
     def add_arg(self,name):
         self.args.append(name)
 
-    def add_child(self,child):
+    def add_child(self,child, jsname):
         if len(self.vars) > 0:
-            child.name = self.vars[-1]
+            if jsname == 'anonymous':
+                child.name = self.vars[-1]
+            else:
+                child.name = jsname
         self.children.append(child)
 
 
@@ -569,7 +572,7 @@ def FunctionDeclaration(type, id, params, defaults, body, generator, expression)
     global Context, scope_stack
     previous_context = Context
     scope = Scope()
-    scope_stack[-1].add_child(scope)
+    scope_stack[-1].add_child(scope, JsName)
     scope_stack.append(scope)
     for v in params:
         scope.add_arg(v['name'])
@@ -623,7 +626,7 @@ def FunctionExpression(type, id, params, defaults, body, generator, expression):
     # again quite complicated
     global Context, scope_stack
     scope = Scope()
-    scope_stack[-1].add_child(scope)
+    scope_stack[-1].add_child(scope, JsName)
     scope_stack.append(scope)
     for v in params:
         scope.add_arg(v['name'])
