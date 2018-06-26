@@ -71,6 +71,16 @@ def translate_js(js, HEADER=DEFAULT_HEADER, use_compilation_plan=False):
     print(translating_nodes.root_scope.toJSON())
     return ret
 
+def organize_js(js, HEADER=DEFAULT_HEADER):
+    parser = pyjsparser.PyJsParser()
+    parsed = parser.parse(js) # js to esprima syntax tree
+    # Another way of doing that would be with my auto esprima translation but its much slower and causes import problems:
+    # parsed = esprima.parse(js).to_dict()
+    translating_nodes.clean_stacks()
+    translating_nodes.trans(parsed)  # syntax tree to python code
+    print(translating_nodes.root_scope.toJSON())
+    return translating_nodes.root_scope
+
 class match_unumerator(object):
     """This class ise used """
     matchcount = -1
