@@ -315,8 +315,9 @@ def AssignmentExpression(type, operator, left, right):
             return 'var.put(%s, %s, %s)' % (repr(to_key(left)), trans(right), repr(operator))
         else:
             right_trans = trans(right)
-            if right_trans == ThisExpression(None)
-            return 'var.put(%s, %s)' % (repr(to_key(left)), trans(right))
+            if right_trans == ThisExpression(None):
+                print('this aliased')
+            return 'var.put(%s, %s)' % (repr(to_key(left)), right_trans)
     elif left['type']=='MemberExpression':
         this_tracker = False
         far_left = trans(left['object'])
