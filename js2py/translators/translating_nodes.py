@@ -528,8 +528,8 @@ def VariableDeclarator(type, id, init):
     name = id['name']
     # register the name if not already registered
     Context.register(name)
+    scope_stack[-1].add_name(repr(name))
     if init:
-        scope_stack[-1].add_name(repr(name))
         ret = trans(init)
         #print(repr(name) + ' = ' + ret)
         return 'var.put(%s, %s)\n' % (repr(name), ret)
